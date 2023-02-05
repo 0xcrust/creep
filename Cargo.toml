@@ -1,0 +1,16 @@
+[package]
+name = "stealth"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.68"
+dotenv = "0.15.0"
+env_logger = "0.10.0"
+log = "0.4.17"
+serde = "1.0.152"
+serde_json = "1.0.91"
+thirtyfour = "0.31.0"
+tokio = "1.25.0"
