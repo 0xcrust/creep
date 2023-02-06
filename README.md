@@ -2,7 +2,7 @@
 
 A plugin for [thirtyfour](https://github.com/stevepryde/thirtyfour), a Rust-based Selenium webdriver built on top of [Fantoccini](https://github.com/jonhoo/fantoccini). This library lets your thirtyfour driver pass basic fingerprint tests to avoid detection.
 
-This project is based on the work done in [puppeteer-extra-plugin-stealth](https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth), and [selenium-stealth](https://github.com/diprajpatra/selenium-stealth).
+This project is based on the work done in [puppeteer-extra-plugin-stealth](https://github.com/berstend/puppeteer-extra/tree/master/packages/puppeteer-extra-plugin-stealth), and [selenium-stealth](https://github.com/diprajpatra/selenium-stealth). Credit is due to the authors of those projects.
 
 
 ## Usage
