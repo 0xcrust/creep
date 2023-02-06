@@ -1,14 +1,7 @@
-#![allow(dead_code)]
-
-use std::io::Read;
-
 use anyhow::Result;
-use serde_json::json;
-use serde_json::map::Map;
-use serde_json::Value;
-use thirtyfour::extensions::cdp::ChromeDevTools;
-use thirtyfour::prelude::*;
-use tokio::fs::hard_link;
+use serde_json::{ json, Value };
+use std::io::Read;
+use thirtyfour::{ extensions::cdp::ChromeDevTools, prelude::* };
 
 pub async fn activate_stealth(
     driver: &WebDriver,
@@ -21,7 +14,6 @@ pub async fn activate_stealth(
     fix_hairline: Option<bool>,
     run_on_insecure_origins: Option<bool>,
 ) -> Result<()> {
-    let caps = DesiredCapabilities::chrome();
     let chrome = ChromeDevTools::new(driver.handle.clone());
 
     with_utils(&chrome).await?;
@@ -32,9 +24,9 @@ pub async fn activate_stealth(
     navigator_languages(&chrome, languages.clone()).await?;
     navigator_permissions(&chrome).await?;
     navigator_plugins(&chrome).await?;
-    navigator_vendor(&chrome, &None).await?;
+    navigator_vendor(&chrome, &vendor).await?;
     navigator_webdriver(&chrome).await?;
-    user_agent_override(&chrome, &user_agent, None, &platform).await?;
+    user_agent_override(&chrome, &user_agent, languages.clone(), &platform).await?;
     webgl_vendor_override(&chrome, &webgl_vendor, &renderer).await?;
     window_outerdimensions(&chrome).await?;
 
@@ -43,7 +35,6 @@ pub async fn activate_stealth(
         hairline_fix(&chrome).await?;
     }
 
-    log::info!("Stealth activated!..Let's go");
     Ok(())
 }
 
@@ -82,7 +73,10 @@ async fn media_codecs(chrome: &ChromeDevTools) -> Result<()> {
     Ok(())
 }
 
-async fn navigator_languages(chrome: &ChromeDevTools, languages: Option<Vec<&str>>) -> Result<()> {
+async fn navigator_languages(
+    chrome: &ChromeDevTools, 
+    languages: Option<Vec<&str>>
+) -> Result<()> {
     let languages = languages.unwrap_or(vec!["en-US", "en"]);
     let args = languages
         .into_iter()
@@ -103,7 +97,10 @@ async fn navigator_plugins(chrome: &ChromeDevTools) -> Result<()> {
     Ok(())
 }
 
-async fn navigator_vendor(chrome: &ChromeDevTools, vendor: &Option<&str>) -> Result<()> {
+async fn navigator_vendor(
+    chrome: &ChromeDevTools, 
+    vendor: &Option<&str>
+) -> Result<()> {
     let vendor = vendor.unwrap_or("Google Inc.");
     let args = json!(vendor);
     evaluate_on_new_document(chrome, "js/navigator.vendor.js", Some(vec![args])).await?;
@@ -133,7 +130,6 @@ async fn user_agent_override(
             result.get("userAgent").unwrap().to_string()
         }
     };
-    log::info!("user_agent_override: user_agent: {}", user_agent);
 
     user_agent = user_agent.replace("HeadlessChrome", "Chrome");
     user_agent = format!("({})", user_agent.trim());
