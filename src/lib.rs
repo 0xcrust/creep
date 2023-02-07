@@ -1,9 +1,8 @@
 use anyhow::Result;
-use serde_json::{ json, Value };
-use std::io::Read;
-use thirtyfour::{ extensions::cdp::ChromeDevTools, prelude::* };
+use serde_json::{json, Value};
+use thirtyfour::{extensions::cdp::ChromeDevTools, prelude::*};
 
-pub async fn activate_stealth(
+pub async fn activate(
     driver: &WebDriver,
     user_agent: Option<&str>,
     languages: Option<Vec<&str>>,
@@ -39,12 +38,12 @@ pub async fn activate_stealth(
 }
 
 async fn with_utils(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/utils.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/utils.js"), None).await?;
     Ok(())
 }
 
 async fn chrome_app(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/chrome.app.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/chrome.app.js"), None).await?;
     Ok(())
 }
 
@@ -56,7 +55,7 @@ async fn chrome_runtime(
 
     evaluate_on_new_document(
         chrome,
-        "js/chrome.runtime.js",
+        include_str!("../js/chrome.runtime.js"),
         Some(vec![json!(run_on_insecure_origins)]),
     )
     .await?;
@@ -64,51 +63,55 @@ async fn chrome_runtime(
 }
 
 async fn iframe_content_window(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/iframe.contentWindow.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/iframe.contentWindow.js"), None).await?;
     Ok(())
 }
 
 async fn media_codecs(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/media.codecs.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/media.codecs.js"), None).await?;
     Ok(())
 }
 
-async fn navigator_languages(
-    chrome: &ChromeDevTools, 
-    languages: Option<Vec<&str>>
-) -> Result<()> {
+async fn navigator_languages(chrome: &ChromeDevTools, languages: Option<Vec<&str>>) -> Result<()> {
     let languages = languages.unwrap_or(vec!["en-US", "en"]);
     let args = languages
         .into_iter()
         .map(|x| json!(x))
         .collect::<Vec<Value>>();
 
-    evaluate_on_new_document(chrome, "js/navigator.languages.js", Some(args)).await?;
+    evaluate_on_new_document(
+        chrome,
+        include_str!("../js/navigator.languages.js"),
+        Some(args),
+    )
+    .await?;
     Ok(())
 }
 
 async fn navigator_permissions(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/navigator.permissions.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/navigator.permissions.js"), None).await?;
     Ok(())
 }
 
 async fn navigator_plugins(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/navigator.plugins.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/navigator.plugins.js"), None).await?;
     Ok(())
 }
 
-async fn navigator_vendor(
-    chrome: &ChromeDevTools, 
-    vendor: &Option<&str>
-) -> Result<()> {
+async fn navigator_vendor(chrome: &ChromeDevTools, vendor: &Option<&str>) -> Result<()> {
     let vendor = vendor.unwrap_or("Google Inc.");
     let args = json!(vendor);
-    evaluate_on_new_document(chrome, "js/navigator.vendor.js", Some(vec![args])).await?;
+    evaluate_on_new_document(
+        chrome,
+        include_str!("../js/navigator.vendor.js"),
+        Some(vec![args]),
+    )
+    .await?;
     Ok(())
 }
 
 async fn navigator_webdriver(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/navigator.webdriver.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/navigator.webdriver.js"), None).await?;
     Ok(())
 }
 
@@ -158,7 +161,7 @@ async fn webgl_vendor_override(
 
     evaluate_on_new_document(
         chrome,
-        "js/webgl.vendor.js",
+        include_str!("../js/webgl.vendor.js"),
         Some(vec![json!(webgl_vendor), json!(renderer)]),
     )
     .await?;
@@ -166,42 +169,26 @@ async fn webgl_vendor_override(
 }
 
 async fn window_outerdimensions(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/window.outerdimensions.js", None).await?;
+    evaluate_on_new_document(
+        chrome,
+        include_str!("../js/window.outerdimensions.js"),
+        None,
+    )
+    .await?;
     Ok(())
 }
 
 async fn hairline_fix(chrome: &ChromeDevTools) -> Result<()> {
-    evaluate_on_new_document(chrome, "js/hairline.fix.js", None).await?;
+    evaluate_on_new_document(chrome, include_str!("../js/hairline.fix.js"), None).await?;
     Ok(())
 }
 
 async fn evaluate_on_new_document(
     chrome: &ChromeDevTools,
-    path: &str,
+    js_source: &str,
     args: Option<Vec<Value>>,
 ) -> Result<()> {
-    let js = read_file(path).expect(&format!("failed reading {}", path));
-    let code = evaluate(&js, &args)?;
-
-    chrome
-        .execute_cdp_with_params(
-            "Page.addScriptToEvaluateOnNewDocument",
-            json!({ "source": code }),
-        )
-        .await?;
-    Ok(())
-}
-
-fn read_file(path: &str) -> Result<String> {
-    let mut file = std::fs::File::open(path).expect(&format!("Failed reading {}", path));
-    let mut result = String::new();
-    file.read_to_string(&mut result)?;
-
-    Ok(result)
-}
-
-fn evaluate(code: &str, maybe_args: &Option<Vec<Value>>) -> Result<String> {
-    let args = match maybe_args {
+    let args = match args {
         Some(args) => args
             .into_iter()
             .map(|x| x.to_string())
@@ -210,5 +197,13 @@ fn evaluate(code: &str, maybe_args: &Option<Vec<Value>>) -> Result<String> {
         None => "".to_string(),
     };
 
-    Ok(format!("({})({})", code, args))
+    let code = format!("({})({})", js_source, args);
+
+    chrome
+        .execute_cdp_with_params(
+            "Page.addScriptToEvaluateOnNewDocument",
+            json!({ "source": code }),
+        )
+        .await?;
+    Ok(())
 }
