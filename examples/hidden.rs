@@ -1,10 +1,7 @@
 use anyhow::Result;
 use serde_json::json;
 use std::path::Path;
-use thirtyfour::{
-    extensions::cdp::ChromeDevTools, 
-    DesiredCapabilities, WebDriver
-};
+use thirtyfour::{extensions::cdp::ChromeDevTools, DesiredCapabilities, WebDriver};
 
 use stealth;
 
@@ -20,7 +17,7 @@ async fn main() -> Result<()> {
     opts.add_chrome_option("useAutomationExtension", false)?;
 
     let driver = WebDriver::new("http://localhost:9515", opts).await?;
-    stealth::activate_stealth(&driver, None, None, None, None, None, None, None, None).await?;
+    stealth::activate(&driver, None, None, None, None, None, None, None, None).await?;
 
     let ua = driver
         .execute(r#"return navigator.userAgent;"#, vec![])
@@ -39,7 +36,7 @@ async fn main() -> Result<()> {
 
     log::info!("width: {:?}", width);
     log::info!("height: {:?}", height);
-    
+
     chrome
         .execute_cdp_with_params(
             "Emulation.setDeviceMetricsOverride",
@@ -56,7 +53,9 @@ async fn main() -> Result<()> {
         )
         .await?;
 
-    driver.screenshot(Path::new("examples/results/hidden.png")).await?;
+    driver
+        .screenshot(Path::new("examples/results/hidden.png"))
+        .await?;
     driver.quit().await?;
 
     Ok(())
